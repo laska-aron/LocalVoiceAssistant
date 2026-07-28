@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-import sounddevice as sd
-
 import queue
-import numpy as np
-import sounddevice as sd
-
 from dataclasses import dataclass
 
-@dataclass(slots=True)
+import sounddevice as sd
+
+
+@dataclass
 class AudioDevice:
     index: int
     name: str
@@ -25,6 +21,7 @@ class MicrophoneManager:
 
         self.queue = queue.Queue()
         self.stream = None
+
 
     def scan(self) -> list[AudioDevice]:
 
@@ -46,31 +43,58 @@ class MicrophoneManager:
 
         return self.devices
 
+
     def _callback(self, indata, frames, time, status):
 
         if status:
             print(status)
 
-        self.queue.put(indata.copy())
+        self.queue.put(
+            bytes(indata)
+        )
 
-    def start(self, device: int | None = None):
 
-        self.stream = sd.InputStream(
+    def start(self, device=None):
+
+        self.stream = sd.RawInputStream(
+
             samplerate=16000,
-            channels=1,
-            dtype="int16",
-            blocksize=1024,
-            callback=self._callback,
+
+            blocksize=8000,
+
             device=device,
+
+            dtype="int16",
+
+            channels=1,
+
+            callback=self._callback
         )
 
         self.stream.start()
 
+
+    def read(self):
+
+        return self.queue.get()
+
+
     def stop(self):
 
-        if self.stream is not None:
+        if self.stream:
+
             self.stream.stop()
             self.stream.close()
 
-    def read(self):
-        return self.queue.get()
+    def pause(self):
+
+        if self.stream:
+
+            self.stream.stop()
+
+
+    def resume(self):
+
+        if self.stream:
+
+            self.stream.start()

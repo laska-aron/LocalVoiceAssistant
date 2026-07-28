@@ -1,8 +1,10 @@
 from assistant.app import VoiceAssistant
 
 
-def main() -> None:
+def main():
+
     assistant = VoiceAssistant()
+
     assistant.run()
 
 
