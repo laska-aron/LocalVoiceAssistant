@@ -1,0 +1,11 @@
+{
+    "wake_word": "hey jarvis",
+
+    "language": "en",
+
+    "vosk_model": "models/vosk",
+
+    "tts": true,
+
+    "debug": true
+}
