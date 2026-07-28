@@ -1,11 +1,10 @@
 {
-    "wake_word": "hey jarvis",
-
+    "assistant_name": "Computer",
     "language": "en",
-
+    "debug": true,
+    "tts_enabled": true,
+    "wake_word_enabled": true,
+    "speech_timeout": 5,
     "vosk_model": "models/vosk",
-
-    "tts": true,
-
-    "debug": true
+    "log_level": "INFO"
 }
