@@ -10,6 +10,12 @@ from audio.tts import TextToSpeech
 from assistant.parser import CommandParser
 from assistant.dispatcher import Dispatcher
 
+from assistant.command_loader import CommandLoader
+from assistant.api import AssistantAPI
+
+import re
+
+from assistant.state import AssistantState
 
 class VoiceAssistant:
 
@@ -31,7 +37,19 @@ class VoiceAssistant:
 
         self.pending_action = None
 
+        self.command_loader = CommandLoader()
+
+        self.commands = self.command_loader.load()
+
+        self.api = AssistantAPI(
+            self
+        )
+
+        self.state = AssistantState.WAITING_WAKEWORD
+
     def say(self, text: str):
+
+        self.state = AssistantState.SPEAKING
 
         print(
             "Assistant:",
@@ -44,7 +62,7 @@ class VoiceAssistant:
             text
         )
 
-        time.sleep(0.5)
+        #time.sleep(0.5)
 
         self.microphone.resume()
 
@@ -59,76 +77,90 @@ class VoiceAssistant:
 
         while True:
 
-            audio = self.microphone.read()
+            if self.state != AssistantState.WAITING_WAKEWORD:
 
+                time.sleep(0.01)
+
+                continue
+
+            audio = self.microphone.read()
 
             if self.wakeword.process(audio):
 
+                self.wakeword.reset()
+
                 print()
                 print("Wake word detected!")
-
-
-                self.microphone.pause()
-
 
                 self.say(
                     "Yes sir?"
                 )
 
-
-                time.sleep(0.8)
-
-
-                self.microphone.resume()
-
+                #time.sleep(0.5)
 
                 self.handle_command()
 
+                # kis idő a saját hang lecsengésére
+                time.sleep(1)
 
+                print()
+                print("Waiting for wake word...")
+
+
+    def execute_command(self, text):
+
+        text = text.lower().strip()
+
+
+        for command in self.commands:
+
+            for trigger in command["triggers"]:
+
+                match = re.search(
+                    trigger,
+                    text
+                )
+
+
+                if match:
+
+                    command["execute"](
+                        self.api,
+                        match
+                    )
+
+                    return True
+
+
+        return False
 
     def handle_command(self):
 
+        self.state = AssistantState.LISTENING_COMMAND
+
         text = self.listen_command()
 
-
-        if self.pending_action:
-
-            self.handle_pending_answer(text)
-
-            return
-
-
-        command = self.parser.parse(text)
-
-
         if text is None:
+
+            self.state = AssistantState.WAITING_WAKEWORD
+
             return
 
+        self.state = AssistantState.EXECUTING_COMMAND
 
-        command = self.parser.parse(
+        handled = self.execute_command(
             text
         )
 
-
-        if command is None:
+        if not handled:
 
             self.say(
-                "I did not understand."
+                "I don't know that command."
             )
 
-            return
+        self.wakeword.reset()
 
-
-        result = self.dispatcher.execute(
-            command
-        )
-
-
-        self.handle_result(
-            result
-        )
-
-
+        self.state = AssistantState.WAITING_WAKEWORD
 
     def handle_result(self, result):
 

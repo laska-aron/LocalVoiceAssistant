@@ -18,6 +18,13 @@ class WakeWordDetector:
             ]
         )
 
+    def reset(self):
+
+        self.model = Model(
+            wakeword_models=[
+                "hey_jarvis"
+            ]
+        )
 
     def process(self, audio: bytes) -> bool:
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import sounddevice as sd
 
+import time
 
 @dataclass
 class AudioDevice:
@@ -98,3 +99,5 @@ class MicrophoneManager:
         if self.stream:
 
             self.stream.start()
+
+            time.sleep(0.1)
