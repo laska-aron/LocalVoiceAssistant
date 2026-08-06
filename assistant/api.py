@@ -11,6 +11,15 @@ class AssistantAPI:
 
 
     def say(self, text: str):
+        text = text.replace(
+            ",",
+            ", "
+        )
+
+        text = text.replace(
+            ".",
+            ". "
+        )
 
         self.assistant.say(text)
 

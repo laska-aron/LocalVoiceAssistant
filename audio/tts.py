@@ -1,28 +1,54 @@
-from __future__ import annotations
-
-import pyttsx3
+from TTS.api import TTS
+import sounddevice as sd
+import numpy as np
 
 
 class TextToSpeech:
 
     def __init__(self):
 
-        self.rate = 170
+        print("Loading TTS model...")
 
 
-    def speak(self, text: str):
-
-        engine = pyttsx3.init()
-
-        engine.setProperty(
-            "rate",
-            self.rate
+        self.tts = TTS(
+            "tts_models/en/vctk/vits"
         )
 
-        engine.say(
-            text
+
+        print("TTS model loaded.")
+
+
+    def speak(self, text):
+
+        audio = self.tts.tts(
+            text=text,
+            speaker="p267",
+            speed=0.9
         )
 
-        engine.runAndWait()
 
-        engine.stop()
+        # hangerő növelése
+        audio = np.array(audio)
+
+        max_volume = max(abs(audio))
+
+        if max_volume > 0:
+            audio = audio / max_volume
+
+        audio = audio * 0.8
+
+
+        # clipping védelem
+        audio = np.clip(
+            audio,
+            -1,
+            1
+        )
+
+
+        sd.play(
+            audio,
+            samplerate=22050
+        )
+
+        sd.wait()
